@@ -1,0 +1,144 @@
+
+/*
+  @
+  @   Date               :        30.01.2019 / Wednesday
+  @
+  @   Contact            :        Writing by Muhammet Rasit KIYAK                    @https://www.linkedin.com/in/mrstkyk/
+  @
+  @   License            :        GNU AFFERO GENERAL PUBLIC LICENSE v3
+  @
+  @   Description        :        This Library for AD7788/89 External ADC from Analog Devices
+  @                               Dependency library is HAL for STM32 series (__STM32xxx_HAL_SPI_H)
+  @
+*/
+#include "AD7788.h"
+
+/*
+   @Brief         Chip Select Initialization
+   @Description   Initialization for selecting CS Pin
+   @Parameter     GPIO_TypeDef      ->  CS Pin Port
+                  uint16_t          ->  CS Pin Number
+   @Return value  void
+ */
+void AD7788_CS_Initialization(GPIO_TypeDef *GPIOx,uint16_t GPIO_Pin)
+{
+    AD7788_ChipSelect.Port=GPIOx;
+    AD7788_ChipSelect.Pin=GPIO_Pin;
+}
+
+/*
+   @Brief         Chip Select @ High
+   @Description   Chip Select must be high, end of spi communication
+   @Parameter
+   @Return value  void
+ */
+void AD7788_CS_High(void)
+{
+    HAL_GPIO_WritePin(AD7788_ChipSelect.Port, AD7788_ChipSelect.Pin, GPIO_PIN_SET);
+}
+
+/*
+   @Brief         Chip Select @ Low
+   @Description   Chip Select must be low, begining of spi communication
+   @Parameter
+   @Return value  void
+ */
+void AD7788_CS_Low(void)
+{
+    HAL_GPIO_WritePin(AD7788_ChipSelect.Port, AD7788_ChipSelect.Pin,GPIO_PIN_RESET);
+}
+
+/*
+   @Brief         Write Communication Register
+   @Description   Setting Communication Register Settings
+   @Parameter     SPI_HandleTypeDef ->  spi
+   @Return value  void
+ */
+void AD7788_Set_Communication(SPI_HandleTypeDef spi)
+{
+    AD7788_CS_Low();
+    AD7788_set_buf[0] = AD7788_CommunicationReg;
+    HAL_SPI_Transmit(&spi,AD7788_set_buf,1,50);
+    AD7788_CS_High();
+}
+
+/*
+   @Brief         Read Status Register value
+   @Description   Get Status Register Value
+   @Parameter     SPI_HandleTypeDef ->  spi
+   @Return value  uint8_t
+ */
+uint8_t AD7788_Get_Status(SPI_HandleTypeDef spi)
+{
+    AD7788_CS_Low();
+    AD7788_set_buf[0] = AD7788_StatusReg;
+    HAL_SPI_Transmit(&spi,AD7788_set_buf,1,50);
+    HAL_SPI_Receive(&spi,AD7788_get_buf,1,50);
+    AD7788_CS_High();
+
+    return AD7788_get_buf[0];
+}
+
+/*
+   @Brief         Write Mode Register
+   @Description   Setting Mode Register Settings
+   @Parameter     SPI_HandleTypeDef ->  spi
+   @Return value  void
+ */
+void AD7788_Set_Mode(SPI_HandleTypeDef spi)
+{
+    AD7788_CS_Low();
+    AD7788_set_buf[0] = AD7788_ModeReg;
+    HAL_SPI_Transmit(&spi,AD7788_set_buf,1,50);
+    AD7788_CS_High();
+}
+
+/*
+   @Brief         Read Mode Register value
+   @Description   Get Mode Register Value
+   @Parameter     SPI_HandleTypeDef ->  spi
+   @Return value  uint8_t
+ */
+uint8_t AD7788_Get_Mode(SPI_HandleTypeDef spi)
+{
+    AD7788_CS_Low();
+    AD7788_set_buf[0] = AD7788_ModeReg;
+    HAL_SPI_Transmit(&spi,AD7788_set_buf,1,50);
+    HAL_SPI_Receive(&spi,AD7788_get_buf,1,50);
+    AD7788_CS_High();
+
+    return AD7788_get_buf[0];
+}
+
+/*
+   @Brief         Read ADC Data
+   @Description   Get DATA Register Value
+   @Parameter     SPI_HandleTypeDef ->  spi
+   @Return value  uint16_t
+ */
+uint16_t AD7788_Get_Data(SPI_HandleTypeDef spi)
+{
+    AD7788_CS_Low();
+    AD7788_set_buf[0] = AD7788_DataReg;
+    HAL_SPI_Transmit(&spi,AD7788_set_buf,1,50);
+    HAL_SPI_Receive(&spi,AD7788_get_buf,2,50);
+    AD7788_CS_High();
+
+    return AD7788_get_buf[0]<<8|AD7788_get_buf[1];
+}
+
+/*
+   @Brief         Initiallizaton AD778 External ADC
+   @Description
+   @Parameter     SPI_HandleTypeDef ->  spi
+   @              GPIO_TypeDef      ->  CS Pin Port
+   @              uint16_t          ->  CS Pin Number
+   @Return value  void
+ */
+void AD7788_Initialization(SPI_HandleTypeDef spi, GPIO_TypeDef *GPIOx,uint16_t GPIO_Pin)
+{
+    AD7788_CS_Initialization(GPIOx,GPIO_Pin);
+    AD7788_Set_Communication(spi);
+    AD7788_Set_Mode(spi);
+}
+
